@@ -1,3 +1,5 @@
+![PE Studio · macOS 提示词专家](docs/assets/cover.png)
+
 <div align="center">
   <img src="desktop/assets/icon.png" width="128" alt="PE Studio 图标" />
   <h1>PE Studio · 提示词专家</h1>
