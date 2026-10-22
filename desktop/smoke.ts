@@ -2,6 +2,7 @@ import { BrowserWindow, clipboard, dialog, screen } from "electron";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { APP_ORIGIN } from "./server";
+import { nativeGlassStatus } from "./native-glass";
 import type { PublicStudioState } from "./workspace-contract";
 
 const SMOKE_KEY = "desktop-smoke-memory-only-placeholder";
@@ -155,8 +156,9 @@ async function waitForPanel(target: BrowserWindow): Promise<void> {
 
 async function showPanel(target: BrowserWindow): Promise<void> {
   await evaluate(target, () => window.peDesktop!.showPanel());
-  await until("panel shown through native bridge", () => target.isVisible());
-  await pause(100);
+  // The renderer can be visible before AppKit has made it key or the native
+  // material has finished its entrance. Real clicks need that active window.
+  await until("panel active and entrance settled", async () => target.isVisible() && target.isFocused() && evaluate(target, () => Array.from(document.querySelector(".pe-kit-scene")?.getAnimations() || []).every(animation => animation.playState === "finished" || animation.playState === "idle")));
 }
 
 async function stateOf(target: BrowserWindow): Promise<PublicStudioState> {
@@ -585,7 +587,8 @@ async function checkProviderSettings(workspace: BrowserWindow): Promise<Record<s
     if (document.querySelector<HTMLInputElement>("#writer-key-0")!.value || document.querySelector<HTMLInputElement>("#writer-base")!.value !== "https://api.deepseek.com") throw new Error("Cross-provider key or URL was carried into DeepSeek");
     await setInput("#writer-key-0", keys[1]);
     getModels();
-    await until("DeepSeek directory unavailable", () => document.querySelectorAll(".provider-model-catalog button").length === 2);
+    try { await until("DeepSeek directory unavailable", () => document.querySelectorAll(".provider-model-catalog button").length === 2); }
+    catch { throw new Error("DeepSeek directory unavailable: " + JSON.stringify({ protocol:document.querySelector("#writer-panel")?.getAttribute("data-protocol"), address:document.querySelector<HTMLInputElement>("#writer-base")?.value, catalogCount:document.querySelectorAll(".provider-model-catalog button").length, status:Array.from(document.querySelectorAll(".provider-status,.form-error")).map(element=>element.textContent), actions:Array.from(document.querySelectorAll<HTMLButtonElement>(".provider-model-heading button")).map(button=>({text:button.textContent,disabled:button.disabled})) })); }
     const deepseek = Array.from(document.querySelectorAll<HTMLButtonElement>(".provider-model-catalog button")).find(button => button.textContent?.includes("deepseek-v4-pro"));
     if (!deepseek) throw new Error("DeepSeek model missing"); deepseek.click(); await pause();
     if (document.querySelector<HTMLInputElement>("#writer-model")!.value !== "deepseek-v4-pro") throw new Error("Choosing directory model did not preserve exact ID");
@@ -748,8 +751,12 @@ async function checkSettingsModelGuard(popup: BrowserWindow, workspace: BrowserW
           await editModel(before);
         } else {
           await until("settings leave completed after " + choice, () => atDestination(trigger));
+          // The destination and the task owner's config update arrive on
+          // separate renderer IPC channels; wait for both before comparing.
+          const expectedModel = choiceIndex === 0 ? draft : before;
+          await until("confirmed model synchronized after " + trigger + "/" + choice, async () => (await stateOf(popup)).config.writers[0].model === expectedModel);
           const saved = (await stateOf(popup)).config.writers[0].model;
-          if (saved !== (choiceIndex === 0 ? draft : before)) throw new Error("Settings reminder saved/discarded the wrong model");
+          if (saved !== expectedModel) throw new Error("Settings reminder saved/discarded the wrong model");
           await settings();
           if (await evaluate(workspace, () => document.querySelector<HTMLInputElement>("#writer-model")!.value) !== saved) throw new Error("Settings field did not restore the confirmed model");
         }
@@ -842,23 +849,211 @@ async function captureFullWorkspace(workspace: BrowserWindow, directory: string)
   } finally { debug.detach(); }
 }
 
+const APPEARANCE_ATTRIBUTES = ["data-theme", "data-reduce-transparency", "data-reduce-motion", "data-increase-contrast"];
+
+async function glassSceneSnapshot(target: BrowserWindow) {
+  return evaluate(target, () => {
+    const scene = document.querySelector<HTMLElement>(".pe-kit-scene") as (HTMLElement & { diagnostics?: { mode: string; source: string; error: string | null; sourceError: string | null; surfaces: number; renderer: Record<string, unknown> | null; materials: { name: string | null }[] } }) | null;
+    const diagnostics = scene?.diagnostics;
+    const renderer = diagnostics?.renderer;
+    const root = document.documentElement;
+    const expectedOpaque = root.dataset.reduceTransparency === "true" || root.dataset.increaseContrast === "true" || matchMedia("(prefers-reduced-transparency: reduce)").matches || matchMedia("(prefers-contrast: more)").matches || matchMedia("(forced-colors: active)").matches;
+    const expectedDark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    const lenses = Array.from(scene?.querySelectorAll<HTMLElement>(".pe-kit-lens") || []).filter(lens => lens.checkVisibility());
+    const pixel = document.createElement("canvas"); pixel.width = pixel.height = 1;
+    const context = pixel.getContext("2d");
+    const rgba = (color: string): number[] => {
+      if (!context) return [0, 0, 0, 0];
+      context.clearRect(0, 0, 1, 1); context.fillStyle = color; context.fillRect(0, 0, 1, 1);
+      return Array.from(context.getImageData(0, 0, 1, 1).data);
+    };
+    const solid = (color: string) => rgba(color)[3] === 255;
+    const composite = (foreground: number[], background: number[]) => foreground.slice(0, 3).map((channel, index) => channel * foreground[3] / 255 + background[index] * (1 - foreground[3] / 255));
+    const luminance = (color: number[]) => color.reduce((result, channel, index) => {
+      const value = channel / 255;
+      return result + (value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4) * [.2126, .7152, .0722][index];
+    }, 0);
+    const contrast = (foreground: number[], background: number[]) => {
+      const first = luminance(foreground), second = luminance(background);
+      return (Math.max(first, second) + .05) / (Math.min(first, second) + .05);
+    };
+    // The desktop's native backdrop cannot be sampled through DOM/Canvas.
+    // Verify text against both extreme backings instead, using the actual
+    // localized reading fills and foreground colors, never a mock wallpaper.
+    // Transmission below measures only CSS reading layers over that native
+    // backdrop; it does not claim to measure AppKit's optical transmission.
+    const reading = Array.from(scene?.querySelectorAll<HTMLElement>("#prompt-input,.result-bubble-prompt>pre,.pe-detail-candidate pre,.pe-library-record,.settings-field input:not(:disabled),.settings-field select:not(:disabled),.shortcut-editor>input:not(:disabled)") || [])
+      .filter(element => element.checkVisibility()).map(element => {
+        const fills: number[][] = [];
+        let ancestor: HTMLElement | null = element;
+        let opacity = 1;
+        while (ancestor && ancestor !== scene?.parentElement) {
+          const style = getComputedStyle(ancestor);
+          fills.push(rgba(style.backgroundColor));
+          opacity *= Number(style.opacity);
+          ancestor = ancestor.parentElement;
+        }
+        const textStyle = getComputedStyle(element);
+        const color = rgba(textStyle.color);
+        const ratios = [[0, 0, 0], [255, 255, 255]].map(backing => {
+          const background = fills.reduceRight((result, fill) => composite(fill, result), backing);
+          const text = composite(color, background);
+          return contrast(text, background);
+        });
+        // Nested translucent fills compound: two 56% fills leave only 19.4%
+        // visible, even though either individual layer looks translucent.
+        const backgroundTransmission = fills.reduce((remaining, fill) => remaining * (1 - fill[3] / 255), 1);
+        // Inspect the content node itself, not the scene's intentional entrance
+        // animation. CSS filters/transforms on text would fake glass refraction
+        // by distorting what the user is trying to read.
+        const textGeometry = element.matches("input,select,textarea,pre") ? {
+          transform: textStyle.transform, scale: textStyle.scale, rotate: textStyle.rotate, filter: textStyle.filter,
+          undistorted: (textStyle.transform === "none" || new DOMMatrixReadOnly(textStyle.transform).isIdentity)
+            && (textStyle.scale === "none" || textStyle.scale.split(/\s+/).every(value => Number(value) === 1))
+            && (textStyle.rotate === "none" || Number.parseFloat(textStyle.rotate) === 0)
+            && textStyle.filter === "none",
+        } : null;
+        return { element: element.id || element.className || element.tagName, opacity, minimumContrast: Math.min(...ratios), effectiveFillOpacity: 1 - backgroundTransmission, backgroundTransmission, backgroundFills: fills.filter(fill => fill[3] > 0), textColor: color, textGeometry };
+      });
+    const shellLenses = Array.from(scene?.querySelectorAll<HTMLElement>(":scope > .pe-kit-surface > .pe-kit-surface-lens") || []).filter(lens => lens.checkVisibility()).map(lens => {
+      const style = getComputedStyle(lens), after = getComputedStyle(lens, "::after");
+      return { backgroundAlpha: rgba(style.backgroundColor)[3] / 255, backgroundImage: style.backgroundImage, boxShadow: style.boxShadow, after: { content: after.content, backgroundImage: after.backgroundImage, boxShadow: after.boxShadow } };
+    });
+    const shell = scene?.querySelector<HTMLElement>(":scope > .pe-kit-surface");
+    const shellGeometry = [scene, shell, shell?.querySelector<HTMLElement>(":scope > .pe-kit-surface-lens")].filter((element): element is HTMLElement => Boolean(element)).map(element => {
+      const style = getComputedStyle(element);
+      // Compare CSS layout radii, independent of temporary whole-window scale.
+      // Every corner must stay circular and match the native effect geometry.
+      return { element: element.className, cornerRadii: [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius] };
+    });
+    return {
+      backdrop: scene?.dataset.peKitBackdrop || null, sceneTag: scene?.tagName || null,
+      canvasCount: (scene?.querySelectorAll("canvas").length || 0) + (scene?.shadowRoot?.querySelectorAll("canvas").length || 0),
+      customOpticalElements: scene?.querySelectorAll("liquid-glass,liquid-glass-scene").length || 0,
+      nativeSpanLenses: lenses.length > 0 && lenses.every(lens => lens.tagName === "SPAN"),
+      transparentScene: Boolean(scene && rgba(getComputedStyle(scene).backgroundColor)[3] === 0 && getComputedStyle(scene).backgroundImage === "none"),
+      transparentDocument: [root, document.body].every(element => rgba(getComputedStyle(element).backgroundColor)[3] === 0 && getComputedStyle(element).backgroundImage === "none"),
+      reading, shellLenses, shellGeometry,
+      mode: diagnostics?.mode || (scene?.dataset.peKitBackdrop === "native" ? "native" : "unregistered"), source: diagnostics?.source || (scene?.dataset.peKitBackdrop === "native" ? "behind-window" : null),
+      error: diagnostics?.error || null, sourceError: diagnostics?.sourceError || null,
+      kernel: typeof renderer?.backgroundKernel === "string" ? renderer.backgroundKernel : scene?.getAttribute("kernel") || null,
+      renderedSurfaces: diagnostics?.mode === "webgl" && typeof renderer?.surfaces === "number" ? renderer.surfaces : 0,
+      registeredSurfaces: diagnostics?.surfaces || 0,
+      dpr: typeof renderer?.dpr === "number" ? renderer.dpr : null,
+      materials: [...new Set(diagnostics?.materials.map(material => material.name).filter((name): name is string => Boolean(name)) || [])],
+      expectedOpaque, expectedDark,
+      opaque: scene?.dataset.peKitOpaque === "true", theme: scene?.dataset.peKitTheme || null,
+      visibleLenses: lenses.length,
+      sourcePixel: (() => { const source = scene?.shadowRoot?.querySelector<HTMLCanvasElement>("#source"); const ctx = source?.getContext("2d"); return ctx && source ? Array.from(ctx.getImageData(Math.floor(source.width / 2), Math.floor(source.height / 2), 1, 1).data) : null; })(),
+      fallbackStyles: expectedOpaque ? lenses.map(lens => { const style = getComputedStyle(lens); return {className:lens.className,background:style.backgroundColor,blur:style.backdropFilter,webkit:style.getPropertyValue("-webkit-backdrop-filter"),solid:style.getPropertyValue("--pe-kit-solid")}; }) : [],
+      solidFallback: lenses.length > 0 && lenses.every(lens => {
+        const style = getComputedStyle(lens);
+        return solid(style.backgroundColor) && style.backdropFilter === "none";
+      }),
+    };
+  });
+}
+
+async function assertGlassScene(target: BrowserWindow, label: string) {
+  let latest = await glassSceneSnapshot(target);
+  try {
+    await until(label + " glass first frame", async () => {
+      latest = await glassSceneSnapshot(target);
+      if (latest.error || latest.sourceError) throw new Error(`${label} Liquid Glass rendering failed; WebGL fallback is not a successful optical render: ${JSON.stringify(latest)}`);
+      if (latest.backdrop === "native") {
+        if (latest.sceneTag !== "DIV" || latest.canvasCount !== 0 || latest.customOpticalElements !== 0 || !latest.nativeSpanLenses || latest.opaque !== latest.expectedOpaque || latest.theme !== (latest.expectedDark ? "dark" : "light")) return false;
+        if (!latest.reading.length || latest.reading.some(item => item.minimumContrast < 4.5 || item.opacity < .99 || item.textGeometry?.undistorted === false)) return false;
+        if (latest.shellLenses.length !== 1 || latest.shellLenses.some(lens => lens.backgroundImage !== "none" || lens.boxShadow !== "none" || lens.after.backgroundImage !== "none" || lens.after.boxShadow !== "none")) return false;
+        if (latest.expectedOpaque) return latest.solidFallback;
+        if (latest.reading.some(item => item.effectiveFillOpacity > .70 || item.backgroundTransmission < .30)) return false;
+        return latest.transparentScene && latest.transparentDocument && latest.shellLenses.every(lens => lens.backgroundAlpha === 0);
+      }
+      if (latest.source !== "paint" || latest.kernel !== "variable13" || !latest.registeredSurfaces || latest.opaque !== latest.expectedOpaque || latest.theme !== (latest.expectedDark ? "dark" : "light")) return false;
+      if (latest.expectedOpaque) return latest.mode === "css" && latest.solidFallback;
+      if (!latest.sourcePixel || (latest.expectedDark ? latest.sourcePixel[0] >= 128 : latest.sourcePixel[0] <= 128)) return false;
+      const expectedMaterial = latest.expectedDark ? "clearActiveDark" : "clearActive";
+      return latest.mode === "webgl" && latest.renderedSurfaces > 0 && latest.dpr !== null && latest.dpr >= 1 && latest.dpr <= 2 && latest.materials.length > 0 && latest.materials.every(name => name === expectedMaterial);
+    });
+  } catch (error) {
+    throw new Error(`${error instanceof Error ? error.message : label + " glass verification failed"}; last diagnostics: ${JSON.stringify(latest)}`);
+  }
+  const native = nativeGlassStatus(target);
+  if (latest.backdrop === "native" && native.enabled && native.style !== "clear") throw new Error(`${label} uses the wrong native glass style: ${JSON.stringify(native)}`);
+  if (latest.backdrop === "native" && native.enabled && (native.cornerRadius !== 40 || latest.shellGeometry.length !== 3 || latest.shellGeometry.some(element => element.cornerRadii.some(radius => radius !== `${native.cornerRadius}px`)))) throw new Error(`${label} CSS shell corners do not match the 40 pt native glass geometry: ${JSON.stringify({ native, shellGeometry: latest.shellGeometry })}`);
+  return { ...latest, native };
+}
+
+async function assertReducedGlassMotion(target: BrowserWindow) {
+  const result = await evaluate(target, async () => {
+    const button = Array.from(document.querySelectorAll<HTMLButtonElement>(".pe-kit-scene button.pe-kit-button:not(:disabled)")).find(element => element.checkVisibility());
+    if (!button) throw new Error("No visible enabled glass button to verify reduced motion");
+    const read = () => {
+      const style = getComputedStyle(button), bounds = button.getBoundingClientRect();
+      return { scale: style.scale, transform: style.transform, width: bounds.width, height: bounds.height };
+    };
+    const event = (name: string) => new PointerEvent(name, { bubbles: true, pointerType: "mouse", pointerId: 991, isPrimary: true, button: 0 });
+    const before = read();
+    let hover, press;
+    try {
+      button.dispatchEvent(event("pointerenter"));
+      await new Promise(resolve => setTimeout(resolve, 100)); hover = read();
+      button.dispatchEvent(event("pointerdown"));
+      await new Promise(resolve => setTimeout(resolve, 100)); press = read();
+    } finally { window.dispatchEvent(event("pointerup")); button.dispatchEvent(event("pointerleave")); }
+    const unchanged = [hover, press].every(value => value && (value.scale === "none" || Number(value.scale) === 1) && (value.transform === "none" || new DOMMatrixReadOnly(value.transform).isIdentity) && Math.abs(value.width - before.width) < .1 && Math.abs(value.height - before.height) < .1);
+    return { unchanged, before, hover, press };
+  });
+  if (!result.unchanged) throw new Error("Reduced-motion glass button changed shape on hover or press: " + JSON.stringify(result));
+  return result;
+}
+
+async function captureGlassVariants(target: BrowserWindow, name: string, directory: string) {
+  const attributes = await evaluate(target, names => Object.fromEntries(names.map(attribute => [attribute, document.documentElement.getAttribute(attribute)])), APPEARANCE_ATTRIBUTES);
+  const results: Record<string, unknown> = {};
+  try {
+    for (const variant of ["light", "dark", "reduced-transparency", "increased-contrast", "reduced"] as const) {
+      await evaluate(target, value => {
+        document.documentElement.dataset.theme = value === "dark" ? "dark" : "light";
+        document.documentElement.dataset.reduceTransparency = String(value === "reduced-transparency" || value === "reduced");
+        document.documentElement.dataset.reduceMotion = String(value === "reduced");
+        document.documentElement.dataset.increaseContrast = String(value === "increased-contrast" || value === "reduced");
+      }, variant);
+      const diagnostics = await assertGlassScene(target, `${name}-${variant}`);
+      if ((variant === "light" || variant === "dark") && diagnostics.expectedOpaque) throw new Error(`${name}-${variant} requires normal transparency; a system accessibility preference still requests an opaque fallback: ${JSON.stringify(diagnostics)}`);
+      if (variant === "reduced") results.reducedMotion = await assertReducedGlassMotion(target);
+      // Native capture may otherwise return a cached compositor frame while the
+      // DOM/Canvas already report the next theme or the entrance is still open.
+      await until(name + " entrance settled", () => evaluate(target, () => Array.from(document.querySelector(".pe-kit-scene")?.getAnimations() || []).every(animation => animation.playState === "finished" || animation.playState === "idle")));
+      await pause(180);
+      results[variant] = diagnostics;
+      await writeFile(join(directory, `${name}-${variant}.png`), (await target.webContents.capturePage()).toPNG());
+    }
+    return results;
+  } finally {
+    await evaluate(target, saved => {
+      for (const [name, value] of Object.entries(saved)) {
+        if (value === null) document.documentElement.removeAttribute(name); else document.documentElement.setAttribute(name, value);
+      }
+    }, attributes);
+    await assertGlassScene(target, name + " restored appearance");
+  }
+}
+
 async function captureAppearanceVariants(popup: BrowserWindow, bubble: BrowserWindow, directory: string): Promise<Record<string, unknown>> {
   const windows = [{ window: popup, name: "panel", root: ".pe-panel", controls: ".pe-direction,.compact-results-tab,.generate-button,#prompt-input" }, { window: bubble, name: "result", root: ".pe-result-bubble", controls: ".result-bubble-close,.result-bubble-copy,.result-bubble-retry,.result-bubble-prompt" }];
-  const saved = await Promise.all(windows.map(async item => ({ attributes: await evaluate(item.window, () => Object.fromEntries(["data-theme", "data-reduce-transparency", "data-reduce-motion", "data-increase-contrast"].map(name => [name, document.documentElement.getAttribute(name)]))), zoom: item.window.webContents.getZoomFactor() })));
+  const saved = await Promise.all(windows.map(async item => ({ attributes: await evaluate(item.window, names => Object.fromEntries(names.map(name => [name, document.documentElement.getAttribute(name)])), APPEARANCE_ATTRIBUTES), zoom: item.window.webContents.getZoomFactor() })));
   const variants: Record<string, unknown> = {};
   try {
     // Renderer-only overrides never change the user's macOS preferences.
     for (const item of windows) {
-      for (const variant of ["light", "dark", "reduced"] as const) {
-        await evaluate(item.window, value => {
-          document.documentElement.dataset.theme = value === "dark" ? "dark" : "light";
-          document.documentElement.dataset.reduceTransparency = String(value === "reduced");
-          document.documentElement.dataset.reduceMotion = String(value === "reduced");
-          document.documentElement.dataset.increaseContrast = String(value === "reduced");
-        }, variant);
-        await pause(150);
-        await writeFile(join(directory, `${item.name}-${variant}.png`), (await item.window.webContents.capturePage()).toPNG());
-      }
+      const glass = await captureGlassVariants(item.window, item.name, directory);
+      await evaluate(item.window, () => {
+        document.documentElement.dataset.theme = "light";
+        document.documentElement.dataset.reduceTransparency = "true";
+        document.documentElement.dataset.reduceMotion = "true";
+        document.documentElement.dataset.increaseContrast = "true";
+      });
+      await assertGlassScene(item.window, item.name + " zoom fallback");
       const reduced = await evaluate(item.window, selector => {
         const style = getComputedStyle(document.querySelector(selector)!);
         return { background: style.backgroundColor, backdropFilter: style.backdropFilter };
@@ -892,7 +1087,7 @@ async function captureAppearanceVariants(popup: BrowserWindow, bubble: BrowserWi
       await pause(150);
       await writeFile(join(directory, `${item.name}-zoom200.png`), (await item.window.webContents.capturePage()).toPNG());
       if (!zoom.checkedControls || zoom.inaccessible.length || zoom.outerScrollWidth > zoom.outerClientWidth + 2 || zoom.outerScrollHeight > zoom.outerClientHeight + 2 || zoom.outerScrollTop || zoom.outerScrollLeft || zoom.panelScrollWidth > zoom.panelClientWidth + 2) throw new Error(`${item.name} 200% zoom clipped controls or introduced outer scrolling: ` + JSON.stringify(zoom));
-      variants[item.name] = { reduced, zoom };
+      variants[item.name] = { glass, reduced, zoom };
       item.window.webContents.setZoomFactor(saved[windows.indexOf(item)].zoom);
     }
     return { rendererOnlyOverrides: true, ...variants };
@@ -953,7 +1148,7 @@ export async function runDesktopSmoke(
     if (Object.values(initial.appearance).some(value => typeof value !== "boolean")) throw new Error("Invalid appearance state");
     const inputBounds = popup.getBounds();
     await pause(300);
-    const inputViewport = await evaluate(popup, async () => ({ width: innerWidth, height: innerHeight, appearance: await window.peDesktop!.getAppearance() }));
+    const inputViewport = { ...await evaluate(popup, async () => ({ width: innerWidth, height: innerHeight, appearance: await window.peDesktop!.getAppearance() })), glass: await assertGlassScene(popup, "panel") };
     if (inputViewport.width !== inputBounds.width || inputViewport.height !== inputBounds.height) throw new Error("Native material changed the input renderer viewport: " + JSON.stringify({ viewport: inputViewport, bounds: inputBounds, currentBounds: popup.getBounds() }));
     report.inputViewport = inputViewport;
     const inputArea = screen.getDisplayMatching(inputBounds).workArea;
@@ -970,11 +1165,15 @@ export async function runDesktopSmoke(
     if (workspace.isAlwaysOnTop() || workspace === popup) throw new Error("Workspace is not an independent standard window");
     await pause(300);
     const workspaceContentBounds = workspace.getContentBounds();
-    const workspaceViewport = await evaluate(workspace, async () => ({ width: innerWidth, height: innerHeight, appearance: await window.peDesktop!.getAppearance() }));
+    const workspaceViewport = { ...await evaluate(workspace, async () => ({ width: innerWidth, height: innerHeight, appearance: await window.peDesktop!.getAppearance() })), glass: await assertGlassScene(workspace, "workspace") };
     if (workspaceViewport.width !== workspaceContentBounds.width || workspaceViewport.height !== workspaceContentBounds.height) throw new Error("Native material changed the workspace renderer viewport: " + JSON.stringify({ viewport: workspaceViewport, contentBounds: workspaceContentBounds, bounds: workspace.getBounds() }));
     if (inputViewport.appearance.nativeGlass && !inputViewport.appearance.reduceTransparency && !workspaceViewport.appearance.nativeGlass) throw new Error("Workspace did not receive the same native glass material");
     report.workspaceWindow = { bounds: workspace.getBounds(), contentBounds: workspaceContentBounds, alwaysOnTop: workspace.isAlwaysOnTop(), settingsOpenedFromVisibleEntry: true };
     report.workspaceViewport = workspaceViewport;
+    const workspaceErrors: string[] = [];
+    workspace.webContents.on("console-message", details => { if (details.level === "error" && workspaceErrors.length < 10) workspaceErrors.push(details.message); });
+    report.workspaceRendererErrors = workspaceErrors;
+    report.workspaceGlassVariants = await captureGlassVariants(workspace, "workspace", directory);
     report.providerSettings = await checkProviderSettings(workspace);
     if (mocked.modelCatalogRequests.length !== 2 || mocked.modelCatalogRequests.some(request => request.method !== "GET" || !request.authenticated) || Object.values(mocked.calls).some(Boolean)) throw new Error("Provider settings performed an unexpected or paid request");
     report.lateCatalogSelection = await checkLateCatalogSelection(workspace, mocked);
@@ -1128,7 +1327,7 @@ export async function runDesktopSmoke(
     // entrance animation. Verify the stable native surface, not that transition.
     await pause(300);
     const resultBounds = bubble.getBounds();
-    const resultViewport = await evaluate(bubble, async () => ({ width: innerWidth, height: innerHeight, appearance: await window.peDesktop!.getAppearance() }));
+    const resultViewport = { ...await evaluate(bubble, async () => ({ width: innerWidth, height: innerHeight, appearance: await window.peDesktop!.getAppearance() })), glass: await assertGlassScene(bubble, "result") };
     if (resultViewport.width !== resultBounds.width || resultViewport.height !== resultBounds.height) throw new Error("Native material changed the result renderer viewport");
     if (inputViewport.appearance.nativeGlass && !inputViewport.appearance.reduceTransparency && !resultViewport.appearance.nativeGlass) throw new Error("Result native glass did not recover after its reveal animation");
     report.resultViewport = resultViewport;
@@ -1190,6 +1389,7 @@ export async function runDesktopSmoke(
     await until("history reveal preserves shuffled identities", () => evaluate(workspace, expected => Array.from(document.querySelectorAll<HTMLElement>(".pe-detail-candidate")).filter(element => element.checkVisibility()).map(card => card.querySelector("header strong")?.getAttribute("title")).join(",") === expected.join(","), historyOrder.expectedModels));
     report.historyBlindOrder = { lettersInSavedRoundOrder: true, revealedModelsCorrect: true };
     report.historyQualificationLabelsRemoved = true;
+    report.historyGlassVariants = await captureGlassVariants(workspace, "history", directory);
     await showPanel(popup);
     bubble = await openResult(popup, "writer-2");
     report.appearanceVariants = await captureAppearanceVariants(popup, bubble, directory);
@@ -1223,6 +1423,7 @@ export async function runDesktopSmoke(
     await showPanel(popup);
     await pause(300);
     await writeFile(join(directory, "window.png"), (await popup.webContents.capturePage()).toPNG());
+    if (workspaceErrors.length) throw new Error("Unexpected workspace renderer errors: " + workspaceErrors.join("; "));
     report.ok = true;
     await writeFile(join(directory, "report.json"), JSON.stringify(report, null, 2));
     complete = true;
@@ -1230,6 +1431,11 @@ export async function runDesktopSmoke(
   } catch (error) {
     report.ok = false;
     report.error = error instanceof Error ? error.message : "Desktop smoke failed";
+    const workspace = getWorkspace?.();
+    if (workspace && !workspace.isDestroyed()) {
+      report.workspaceFailure = await evaluate(workspace, () => ({ rootChildren:document.querySelector("#root")?.childElementCount, bodyText:document.body.innerText.slice(0,1000), readyState:document.readyState })).catch(() => null);
+    }
+    report.catalogRequestsBeforeFailure = mocked.modelCatalogRequests;
     await writeFile(join(directory, "report.json"), JSON.stringify(report, null, 2));
     return 1;
   } finally {

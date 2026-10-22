@@ -7,6 +7,7 @@ import { brandForConnection } from "./model-brand";
 import { ModelLogo } from "./model-logo";
 import { blindFailure, blindLabel, orderedCandidateIds } from "./blind-label";
 export { brandForConnection } from "./model-brand";
+import { GlassButton } from "./liquid-glass";
 import "./compact-results.css";
 
 interface Props { session: SessionRecord; connections: Connection[]; pending: string[]; judging: boolean; running: boolean; onRetry: (id: string) => void; onRetryJudge: () => void; onSettings: () => void; onFavorite: () => void; onNotice: (message: string) => void }
@@ -144,7 +145,7 @@ function CompactResultsSession({ session, connections, generatingIds, busy, judg
           : success ? judging || busy ? "评审中" : "已生成" : "等待生成";
         const badge = recommendedId === id ? session.demo ? "示例推荐" : "推荐"
           : report && report.tiedIds.length > 1 && report.tiedIds.includes(id) && score?.eligible ? "并列" : null;
-        return <button key={id} ref={element => { buttonRefs.current[index] = element; }} type="button"
+        return <GlassButton key={id} ref={element => { buttonRefs.current[index] = element; }} type="button"
           className={`compact-results-tab model-brand-${revealed ? brand.tone : "custom"}${opened ? " is-active" : ""}`}
           aria-label={`${displayName}，${state}${badge ? `，${badge}` : ""}，${opened ? "收起" : "展开"}完整提示词`}
           aria-expanded={opened} aria-pressed={opened} tabIndex={activeId === id ? 0 : -1}
@@ -152,9 +153,9 @@ function CompactResultsSession({ session, connections, generatingIds, busy, judg
           <span className="compact-results-brand"><span>{displayName}</span>{revealed && <ModelLogo brand={brand} />}</span>
           <span className="compact-results-tab-score">{pending && <LoaderCircle size={11} className="spin" aria-hidden="true" />}{state}</span>
           {badge && <span className="compact-results-tab-badge">{badge}</span>}
-        </button>;
+        </GlassButton>;
       })}
     </div>
-    <div className="compact-results-reveal">{modelsRevealed ? <span>模型已显示</span> : onRevealModels && <button type="button" className="compact-reveal-model" aria-label="显示全部模型" onClick={onRevealModels}>显示模型</button>}</div>
+    <div className="compact-results-reveal">{modelsRevealed ? <span>模型已显示</span> : onRevealModels && <GlassButton type="button" className="compact-reveal-model" aria-label="显示全部模型" onClick={onRevealModels}>显示模型</GlassButton>}</div>
   </section>;
 }

@@ -8,6 +8,8 @@ export interface NativeGlassStatus {
   enabled: boolean;
   mainThread?: boolean;
   responderPreserved?: boolean;
+  style?: "clear" | "regular";
+  cornerRadius?: number;
   reason?: string;
 }
 interface NativeGlassModule {

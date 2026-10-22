@@ -409,12 +409,13 @@ function beginNativeInteraction(window: BrowserWindow): () => void {
 
 function updateAppearance(): void {
   const appearance = currentAppearance();
-  if (appearance.reduceMotion && materialTimer) {
+  const opaque = appearance.reduceTransparency || appearance.increaseContrast;
+  if ((appearance.reduceMotion || opaque) && materialTimer) {
     clearTimeout(materialTimer); materialTimer = undefined; panelAnimating = false;
   }
   for (const window of allOwnedWindows()) {
     const group = isGroupWindow(window);
-    const effectVisible = !appearance.reduceTransparency && !(group && panelAnimating);
+    const effectVisible = !opaque && !(group && panelAnimating);
     let glass = false;
     if (process.platform === "darwin") {
       // The AppKit wrapper preserves Electron's root content view and the
@@ -424,7 +425,7 @@ function updateAppearance(): void {
       glass = result.ok && result.enabled;
       if (effectVisible && !glass) window.setVibrancy(group ? "popover" : "sidebar");
     }
-    window.setBackgroundColor(appearance.reduceTransparency ? appearance.dark ? "#191a1c" : "#f7f7f9" : "#00000000");
+    window.setBackgroundColor(opaque ? appearance.dark ? "#191a1c" : "#f7f7f9" : "#00000000");
     window.webContents.send("pe:appearance", { ...appearance, nativeGlass: glass });
   }
 }
@@ -588,7 +589,7 @@ function showWindowNow(): void {
   cancelPresentationTimers();
   groupState = "visible";
   const appearance = currentAppearance();
-  panelAnimating = !alreadyVisible && !appearance.reduceMotion && !appearance.reduceTransparency;
+  panelAnimating = !alreadyVisible && !appearance.reduceMotion && !appearance.reduceTransparency && !appearance.increaseContrast;
   updateAppearance();
   if (mainWindow.isMinimized()) mainWindow.restore();
   fitPanel();

@@ -7,6 +7,7 @@ import { brandForConnection } from "./model-brand";
 import { ModelLogo } from "./model-logo";
 import { blindFailure, blindLabel } from "./blind-label";
 import { useDesktopAppearance } from "./use-desktop-appearance";
+import { GlassScene, GlassSurface, GlassButton } from "./liquid-glass";
 import "./compact-results.css";
 
 export interface ResultBubbleProps { resultId: string }
@@ -95,11 +96,11 @@ export function ResultBubble({ resultId }: ResultBubbleProps) {
   const reviewText = score ? `${session?.demo ? "示例 " : ""}${Math.round(score.score * 10) / 10} 分`
     : state?.judging && success ? "评审中" : success ? "尚未评分" : "";
 
-  return <section className={`pe-result-bubble model-brand-${revealed ? brand.tone : "custom"}`} aria-label={`${displayName} 提示词结果`}>
+  return <GlassScene className="pe-kit-result-scene"><GlassSurface radius={40} className={`pe-result-bubble model-brand-${revealed ? brand.tone : "custom"}`} role="region" aria-label={`${displayName} 提示词结果`}>
     <header className="result-bubble-header">
       <div className="result-bubble-identity"><strong title={revealed ? model : undefined}>{displayName}{revealed && <ModelLogo brand={brand} />}</strong></div>
-      {!revealed && <button className="result-reveal-model" type="button" disabled={!state || sending} aria-label="显示全部模型" onClick={() => void command({ type: "reveal-models" })}>显示模型</button>}
-      <button className="result-bubble-close" type="button" aria-label={`关闭 ${displayName} 结果`} onClick={() => void close()}><X size={14} aria-hidden="true" /></button>
+      {!revealed && <GlassButton className="result-reveal-model" type="button" disabled={!state || sending} aria-label="显示全部模型" onClick={() => void command({ type: "reveal-models" })}>显示模型</GlassButton>}
+      <GlassButton className="result-bubble-close" type="button" aria-label={`关闭 ${displayName} 结果`} onClick={() => void close()}><X size={14} aria-hidden="true" /></GlassButton>
     </header>
     <div className="result-bubble-meta" role="status" aria-live="polite">
       {reviewText && <span>{reviewText}</span>}
@@ -109,14 +110,14 @@ export function ResultBubble({ resultId }: ResultBubbleProps) {
     </div>
     {pending ? <div className="result-bubble-empty" role="status"><LoaderCircle size={19} className="spin" aria-hidden="true" /><p>正在生成提示词</p></div>
       : success && candidate ? <div ref={promptRef} className="result-bubble-prompt" tabIndex={0} aria-label={`${displayName} 完整提示词，可选择或滚动阅读`}><pre>{candidate.prompt}</pre></div>
-      : <div className="result-bubble-empty"><p>{candidate?.status === "error" ? "这次生成未完成" : state ? "结果尚未生成" : "正在读取结果"}</p>{candidate?.status === "error" && <small>可以单独重试，其他结果会保留。</small>}{candidate?.status === "error" && candidate.error && (revealed ? <details className="result-bubble-diagnostic"><summary>查看连接详情</summary><p>{candidate.error}</p></details> : <small>{blindFailure(candidate.error)}</small>)}{candidate?.status === "error" && !session?.demo && <button className="result-bubble-retry" type="button" disabled={state?.running || sending} onClick={() => void command({ type: "retry-candidate", id: resultId })}><RefreshCw size={12} aria-hidden="true" />单独重试</button>}</div>}
+      : <div className="result-bubble-empty"><p>{candidate?.status === "error" ? "这次生成未完成" : state ? "结果尚未生成" : "正在读取结果"}</p>{candidate?.status === "error" && <small>可以单独重试，其他结果会保留。</small>}{candidate?.status === "error" && candidate.error && (revealed ? <details className="result-bubble-diagnostic"><summary>查看连接详情</summary><p>{candidate.error}</p></details> : <small>{blindFailure(candidate.error)}</small>)}{candidate?.status === "error" && !session?.demo && <GlassButton className="result-bubble-retry" type="button" disabled={state?.running || sending} onClick={() => void command({ type: "retry-candidate", id: resultId })}><RefreshCw size={12} aria-hidden="true" />单独重试</GlassButton>}</div>}
     {success && session?.judge?.status === "unavailable" && <p className="result-bubble-review-note">评审未完成，已有提示词仍可使用。连接详情可在后台查看。</p>}
     <footer className="result-bubble-footer">
       <span className="result-bubble-feedback" role="status" aria-live="polite">{notice}</span>
-      {success && !report && !state?.running && !session?.demo && <button className="result-bubble-retry" type="button" disabled={sending} onClick={() => void command({ type: "retry-judge" })}>重新评审</button>}
-      <button className="result-bubble-copy" type="button" disabled={!success || copying} aria-label={`复制 ${displayName} 完整提示词`} onClick={() => void copy()}>{copied ? <Check size={13} aria-hidden="true" /> : copying ? <LoaderCircle size={13} className="spin" aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}{copied ? "已复制" : "复制"}</button>
+      {success && !report && !state?.running && !session?.demo && <GlassButton className="result-bubble-retry" type="button" disabled={sending} onClick={() => void command({ type: "retry-judge" })}>重新评审</GlassButton>}
+      <GlassButton className="result-bubble-copy" type="button" disabled={!success || copying} aria-label={`复制 ${displayName} 完整提示词`} onClick={() => void copy()}>{copied ? <Check size={13} aria-hidden="true" /> : copying ? <LoaderCircle size={13} className="spin" aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}{copied ? "已复制" : "复制"}</GlassButton>
     </footer>
-  </section>;
+  </GlassSurface></GlassScene>;
 }
 
 export default ResultBubble;

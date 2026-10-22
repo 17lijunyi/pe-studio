@@ -6,6 +6,7 @@ PE Studio's original source code is licensed under [MIT](LICENSE). Third-party c
 | --- | --- | --- |
 | shadcn/ui | `components/ui/`, `hooks/use-mobile.ts`, `vendor/shadcn-tailwind-4.13.0.css` | MIT; preserve [the bundled shadcn license](vendor/shadcn-tailwind-4.13.0.LICENSE.md). |
 | OpenAI Sites Vite plugin | `build/sites-vite-plugin.ts` (locally adapted) | MIT; preserve [the upstream license](build/sites-vite-plugin.LICENSE). |
+| Liquid Glass 0.1.0 | `vendor/liquid-glass/` (user-supplied `@vibe/liquid-glass` reuse kit; source metadata paths made portable) | MIT; preserve [the bundled license](vendor/liquid-glass/LICENSE), provenance and validation. Its material is a partial reconstruction, not complete native compositor equivalence. See [integration notes](vendor/liquid-glass/README.md). |
 | npm dependencies | Dependencies declared in `package.json` and `package-lock.json` | Each dependency retains its own license and notices. Dependencies are installed separately, not vendored as `node_modules`. |
 | OpenAI, Claude and Gemini brand marks | `public/brands/` | Identification only; see [asset sources and brand guidance](docs/brand-assets.md). These third-party marks are not relicensed under this project's MIT license and do not imply endorsement. |
 

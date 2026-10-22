@@ -1,0 +1,497 @@
+/* Layout and local reading surfaces. The native desktop window owns its
+   clear, refractive outer rim; browser scenes keep the supplied renderer. */
+.pe-kit-scene.pe-kit-workbench-scene {
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  padding: 8px;
+  overflow: hidden;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: 184px minmax(0, 1fr);
+  border: 0;
+  border-radius: 28px;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+  color: var(--pe-text, #25313d);
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace-sidebar {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  padding: 44px 12px 20px;
+  background: transparent;
+  border-right: 1px solid var(--pe-border, rgba(40, 55, 80, .16));
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace-brand {
+  padding: 0 8px 28px;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace-brand > span {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--pe-text, #25313d);
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace-main {
+  height: 100%;
+  min-height: 0;
+  padding: 38px 28px 28px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  background: transparent;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace-pane {
+  max-width: 980px;
+  margin-inline: auto;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace-heading {
+  margin-bottom: 24px;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace :is(.pe-task-card, .pe-workspace-help, .pe-library-layout) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace .pe-task-card {
+  padding: 22px;
+  border-radius: 22px;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace .pe-workspace-help {
+  padding: 22px 0 0;
+  border-top: 1px solid var(--pe-border);
+  border-radius: 0;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-library-layout {
+  grid-template-columns: 210px minmax(0, 1fr);
+  border-radius: 0;
+  overflow: visible;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-library-list {
+  background: transparent;
+  padding: 0 14px 0 0;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-library-list article {
+  margin-bottom: 12px;
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-library-list article.is-selected {
+  background: var(--pe-soft, rgba(87, 110, 210, .11));
+  box-shadow: none;
+  border-color: transparent;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-library-detail {
+  padding: 0 0 0 22px;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-detail-candidate pre {
+  border: 0;
+  background: transparent;
+  padding: 4px 0;
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--pe-text);
+}
+.pe-kit-scene .provider-settings .settings-dialog {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 24px;
+  color: var(--pe-text, #25313d);
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace .embedded-settings .settings-dialog {
+  padding: 24px;
+  overflow: visible;
+  border-radius: 24px;
+}
+/* Settings share the window's outer glass rather than adding a second frame. */
+.pe-kit-scene .embedded-settings .settings-dialog > .pe-kit-surface-lens {
+  display: none;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace .embedded-settings .dialog-header {
+  padding-bottom: 24px;
+  background: transparent;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace .embedded-settings .dialog-icon {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none;
+  color: var(--pe-text) !important;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace .embedded-settings .dialog-footer {
+  position: static;
+  padding: 12px 0 0;
+  margin-top: 20px;
+  border: 0;
+  border-top: 1px solid var(--pe-border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.pe-kit-scene .provider-settings .provider-detail {
+  padding-left: 22px;
+}
+.pe-kit-scene .provider-settings .provider-detail-header {
+  padding-bottom: 18px;
+  margin-bottom: 22px;
+}
+.pe-kit-scene .provider-settings .provider-layout {
+  grid-template-columns: 145px minmax(0, 1fr);
+  gap: 22px;
+}
+.pe-kit-scene .provider-settings .provider-list {
+  position: static;
+}
+.pe-kit-scene .provider-settings :is(.writer-tabs > button, .provider-list > button, .provider-agents > button, .provider-route-options > button) {
+  border-color: transparent;
+  box-shadow: none;
+  background: transparent;
+  color: var(--pe-text, #25313d);
+}
+.pe-kit-scene .provider-settings :is(.writer-tabs > button.selected, .provider-list > button[aria-pressed="true"], .provider-agents > button.is-selected, .provider-route-options > button[aria-pressed="true"]) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--pe-accent, #465edf);
+  box-shadow: none;
+}
+/* Override the previous gradient controls without altering upstream optics. */
+html body .pe-kit-scene.pe-kit-workbench-scene .pe-workspace button.pe-kit-button,
+html body .pe-kit-scene.pe-kit-settings-scene .provider-settings button.pe-kit-button {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--pe-text, #25313d);
+}
+html body .pe-kit-scene.pe-kit-workbench-scene .pe-workspace button.pe-kit-button:disabled,
+html body .pe-kit-scene.pe-kit-settings-scene .provider-settings button.pe-kit-button:disabled {
+  color: var(--pe-muted, #596574);
+  opacity: .72;
+}
+html body .pe-kit-scene.pe-kit-workbench-scene .pe-workspace button.pe-kit-button:is([aria-current="page"], [aria-selected="true"], [aria-pressed="true"]),
+html body .pe-kit-scene.pe-kit-settings-scene .provider-settings button.pe-kit-button:is([aria-selected="true"], [aria-pressed="true"]) {
+  color: var(--pe-accent, #465edf);
+  font-weight: 600;
+}
+.pe-kit-scene .provider-settings .provider-key-row .secret-input {
+  background: var(--pe-reading, rgba(255, 255, 255, .9));
+}
+.pe-kit-scene .provider-settings .provider-key-row .secret-input input {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.pe-kit-scene .provider-settings .provider-model-catalog {
+  background: var(--pe-reading, rgba(255, 255, 255, .9));
+}
+.pe-kit-scene .provider-settings .provider-model-catalog > button {
+  color: var(--pe-text, #25313d);
+}
+.pe-kit-scene .provider-settings .provider-model-catalog > button[aria-pressed="true"] {
+  color: var(--pe-accent, #465edf);
+  background: var(--pe-soft, rgba(87, 110, 210, .11));
+}
+.pe-kit-scene .provider-settings .provider-model-save {
+  margin-top: 14px;
+}
+.pe-kit-scene .provider-settings .provider-model-save-row > .primary-button {
+  font-weight: 600;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace .key-privacy {
+  background: transparent;
+  padding: 12px 0 0;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace-system {
+  padding-inline: 14px;
+  margin-top: 18px;
+}
+.pe-kit-scene.pe-kit-workbench-scene .pe-workspace-toast {
+  bottom: 24px;
+  left: calc(50% + 92px);
+  background: var(--pe-reading, rgba(255, 255, 255, .9));
+  box-shadow: 0 3px 12px rgba(20, 35, 50, .12);
+}
+.pe-kit-scene.pe-kit-settings-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: block;
+  height: 100dvh;
+}
+.pe-kit-scene.pe-kit-settings-scene .modal-overlay {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Keep the native glass visible between content regions. Readability comes
+   from local backplates, never an opaque sheet over the entire window. */
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] {
+  padding: 0;
+}
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace {
+  border-radius: 40px;
+  background: transparent;
+}
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] :is(.pe-workspace-sidebar, .pe-workspace-main, .embedded-settings .settings-dialog) {
+  background: transparent;
+  box-shadow: none;
+}
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace-sidebar {
+  padding-inline:20px;
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings {
+  --ps-field: var(--pe-kit-reading);
+  --ps-soft: var(--pe-soft);
+}
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-library-detail,
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings .provider-detail {
+  background: transparent;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: none;
+  color: var(--pe-text);
+}
+/* Each reading area gets one backing. Covering the whole provider/detail pane
+   and its fields separately made their combined white opacity nearly solid. */
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace .pe-task-card {
+  background: var(--pe-kit-reading);
+  border: 0;
+  border-radius: 18px;
+  box-shadow: none;
+  color: var(--pe-text);
+}
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-library-detail {
+  margin-left: 20px;
+  padding: 20px;
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings .provider-detail {
+  padding: 20px;
+}
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-task-card > .pe-kit-surface-lens {
+  display: none;
+}
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace .pe-library-list article {
+  background: var(--pe-kit-reading);
+  border-color: transparent;
+  border-radius: 14px;
+}
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace .pe-library-list article.is-selected {
+  box-shadow: inset 3px 0 0 var(--pe-accent);
+}
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-library-record {
+  color: var(--pe-text);
+  border-radius: inherit;
+}
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-library-record:hover {
+  background: var(--pe-soft);
+}
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-library-record:focus-visible {
+  outline: 2px solid var(--pe-accent);
+  outline-offset: -2px;
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings :is(.provider-model-catalog, .provider-model-search, .provider-key-row .secret-input),
+html body .pe-kit-scene[data-pe-kit-backdrop="native"] .pe-workspace :is(input, textarea, select) {
+  background: var(--pe-kit-reading);
+  color: var(--pe-text);
+  border-color: var(--pe-border);
+  box-shadow: none;
+}
+/* Secret and search inputs inherit their containing field's single surface. */
+html body .pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings :is(.secret-input input, .provider-model-search > input) {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace .pe-task-card :is(input, textarea, select) {
+  background: transparent;
+}
+/* These controls already sit on a reading surface; retain their edge and
+   selected state without adding another milky fill. */
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"]:not([data-pe-kit-opaque="true"]) :is(.pe-task-card, .pe-workspace-help, .pe-library-list article) .pe-kit-button-lens,
+html body .pe-kit-scene[data-pe-kit-backdrop="native"]:not([data-pe-kit-opaque="true"]) .provider-settings .secret-input .pe-kit-button-lens {
+  background: transparent;
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings .provider-model-catalog > button:hover:not(:disabled) {
+  background: var(--pe-soft);
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings .provider-model-catalog > button:focus-visible {
+  outline: 2px solid var(--pe-accent);
+  outline-offset: -2px;
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings .provider-extra-settings {
+  padding: 15px 18px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings .provider-extra-settings > summary {
+  padding: 8px 10px;
+  background: var(--pe-kit-label);
+  border-radius: 10px;
+}
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace .pe-workspace-help {
+  padding: 18px 20px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--pe-kit-reading);
+}
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace-toast {
+  background: var(--pe-kit-reading);
+  color: var(--pe-text);
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"][data-pe-kit-opaque="true"] {
+  --pe-kit-reading: var(--pe-kit-solid);
+}
+/* Exposed headings keep their own small reading layer on either wallpaper. */
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] :is(.pe-workspace-brand strong,.pe-workspace-heading > div,.dialog-header > div:not(.dialog-icon),.settings-section-label,.pe-workspace-bottom > p,.pe-workspace-system,.dialog-footer > span) {
+  background: var(--pe-kit-label);
+  border: 0;
+  border-radius: 10px;
+  padding: 6px 9px;
+  color: var(--pe-text);
+}
+/* Label-sized backings leave the native backdrop exposed between controls. */
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings :is(.provider-detail-header > div, .provider-model-heading > h4, .provider-list > p, .settings-field > label, .settings-field > small, .provider-hint, .provider-status, .provider-empty, .provider-model-save-row > p, .provider-model-save > .form-error, .dialog-body > .form-error, .shortcut-settings > p, .key-privacy) {
+  width: fit-content;
+  max-width: 100%;
+  background: var(--pe-kit-label);
+  border-radius: 7px;
+  padding: 3px 6px;
+  color: var(--pe-text);
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings .provider-detail-header > div {
+  padding: 6px 9px;
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings .provider-model-catalog :is(.provider-hint, .provider-empty) {
+  background: transparent;
+}
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace .pe-detail-candidate pre {
+  background: var(--pe-kit-reading);
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] :is(.pe-library-detail > header > div, .pe-review-summary, .pe-detail-candidate > header, .pe-detail-candidate > small, .pe-detail-candidate > details, .pe-detail-candidate > .pe-inline-warning, .pe-library-detail > .pe-help-note, .pe-library-empty, .pe-workspace-status, .pe-workspace-loading) {
+  width: fit-content;
+  max-width: 100%;
+  background: var(--pe-kit-label);
+  border-radius: 8px;
+  padding: 6px 9px;
+  color: var(--pe-text);
+}
+.pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-detail-candidate > header {
+  width: 100%;
+}
+/* Older provider rules include desktop/state qualifiers. Keep their selected
+   controls on the shared lens rather than adding a second colored fill. */
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace .provider-settings button.pe-kit-button {
+  background: transparent;
+  box-shadow: none;
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings .selected .provider-slot-letter {
+  color: var(--pe-kit-solid);
+}
+html body .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-workspace :is(input, textarea)::placeholder {
+  color: var(--pe-kit-muted);
+  opacity: 1;
+}
+@media (max-width: 900px) {
+  .pe-kit-scene.pe-kit-workbench-scene .pe-workspace {
+    grid-template-columns: 164px minmax(0, 1fr);
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-workspace-main {
+    padding: 38px 18px 22px;
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-workspace .embedded-settings .settings-dialog {
+    padding: 20px;
+  }
+  .pe-kit-scene .provider-settings .provider-layout {
+    grid-template-columns: 128px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .pe-kit-scene .provider-settings .provider-detail {
+    padding-left: 16px;
+  }
+  .pe-kit-scene[data-pe-kit-backdrop="native"] .provider-settings .provider-detail {
+    padding: 16px;
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-library-layout {
+    grid-template-columns: 175px minmax(0, 1fr);
+  }
+}
+@media (max-width: 680px) {
+  .pe-kit-scene.pe-kit-workbench-scene .pe-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-workspace-sidebar {
+    height: auto;
+    padding: 36px 14px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--pe-border);
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-workspace-sidebar nav {
+    display: flex;
+    gap: 6px;
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-workspace-sidebar nav button {
+    flex: 1;
+    justify-content: center;
+    padding: 9px 6px;
+  }
+  .pe-kit-scene.pe-kit-workbench-scene :is(.pe-workspace-brand, .pe-workspace-bottom) {
+    display: none;
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-workspace-main {
+    padding: 18px 14px;
+  }
+  .pe-kit-scene .provider-settings .provider-layout {
+    grid-template-columns: 1fr;
+  }
+  .pe-kit-scene .provider-settings .provider-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pe-kit-scene .provider-settings .provider-list > p {
+    display: none;
+  }
+  .pe-kit-scene .provider-settings .provider-list > button {
+    flex: 1;
+    min-width: 120px;
+  }
+  .pe-kit-scene .provider-settings .provider-detail {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-library-layout {
+    grid-template-columns: 1fr;
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-library-list {
+    max-height: 220px;
+    overflow: auto;
+    padding: 0 0 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--pe-border);
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-library-detail {
+    padding: 18px 0 0;
+  }
+  .pe-kit-scene.pe-kit-workbench-scene[data-pe-kit-backdrop="native"] .pe-library-detail {
+    margin: 18px 0 0;
+    padding: 16px;
+  }
+  .pe-kit-scene.pe-kit-workbench-scene .pe-workspace-toast {
+    left: 50%;
+    max-width: calc(100vw - 40px);
+  }
+}

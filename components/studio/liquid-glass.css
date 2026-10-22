@@ -1,0 +1,114 @@
+/* Only the adapter's hosts are styled. The vendored optics stay unchanged. */
+.pe-kit-scene {
+  display:block; position:relative; isolation:isolate; min-width:0; min-height:0;
+  border-radius:0; --liquid-glass-padding:0;
+  --pe-kit-ink:#19232c; --pe-kit-muted:#44545f; --pe-kit-solid:#edf0f2;
+  --liquid-glass-fallback:rgba(237,242,244,.78);
+  color:var(--pe-kit-ink); color-scheme:light;
+  background:var(--pe-kit-solid);
+}
+.pe-kit-scene[data-pe-kit-theme="dark"] {
+  --pe-kit-ink:#f0f2f4; --pe-kit-muted:#c1cbd2; --pe-kit-solid:#242b32;
+  --liquid-glass-fallback:rgba(35,44,52,.88);
+  color-scheme:dark;
+}
+html body .pe-kit-scene :is(.pe-kit-surface,.pe-kit-button) {
+  isolation:isolate;
+  background:transparent; border-color:transparent; box-shadow:none;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+}
+.pe-kit-surface,:where(.pe-kit-scene .pe-kit-button) {position:relative}
+html body .pe-kit-scene .pe-kit-lens {
+  display:block; position:absolute; inset:0; z-index:-1;
+  padding:0; margin:0; min-width:0; min-height:0;
+  width:auto; height:auto; border:0; border-radius:inherit;
+  pointer-events:none; user-select:none; -webkit-user-select:none;
+  --liquid-glass-padding:0;
+}
+html body .pe-kit-scene .pe-kit-button {
+  color:inherit; font-family:inherit; -webkit-app-region:no-drag;
+}
+html body .pe-kit-scene .pe-kit-button:disabled {cursor:default}
+html body .pe-kit-scene .pe-kit-button:focus-visible {
+  outline:2px solid var(--pe-accent,#315e83); outline-offset:2px;
+}
+/* Unupgraded/failed imports remain readable without pretending to be WebGL. */
+html body .pe-kit-scene:not(:defined) .pe-kit-lens {
+  background:var(--liquid-glass-fallback);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
+}
+html body .pe-kit-scene[data-pe-kit-opaque="true"] {
+  --liquid-glass-fallback:var(--pe-kit-solid);
+  background:var(--pe-kit-solid); color:var(--pe-kit-ink);
+}
+html body .pe-kit-scene[data-pe-kit-opaque="true"] .pe-kit-lens {
+  background:var(--pe-kit-solid); color:var(--pe-kit-ink);
+  backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:none;
+}
+html body .pe-kit-scene[data-pe-kit-opaque="true"] .pe-kit-button {
+  outline:1px solid var(--pe-border,currentColor); outline-offset:-1px;
+}
+html body .pe-kit-scene[data-pe-kit-motion="reduced"] .pe-kit-button {
+  transition:none!important; transform:none!important; scale:none!important;
+}
+@media (forced-colors:active) {
+  .pe-kit-scene {--pe-kit-ink:CanvasText;--pe-kit-muted:CanvasText;--pe-kit-solid:Canvas}
+  html body .pe-kit-scene .pe-kit-button {outline:1px solid ButtonText}
+}
+
+/* The standalone browser settings dialog also needs a real scene viewport. */
+.pe-kit-scene.pe-kit-settings-scene {
+  position:fixed; inset:0; z-index:100; width:100%; height:100dvh;
+}
+
+/* AppKit Clear supplies the real backdrop and refracting outer rim. Never
+   place the web demo's opaque painted canvas over this native material. */
+.pe-kit-scene[data-pe-kit-backdrop="native"] {
+  --pe-kit-ink:#0c1117; --pe-kit-muted:#19222c;
+  --pe-text:var(--pe-kit-ink); --pe-muted:var(--pe-kit-muted);
+  --pe-accent:#132536;
+  --pe-kit-reading:rgba(255,255,255,.56);
+  --pe-kit-label:var(--pe-kit-reading);
+  --pe-kit-tint:transparent;
+  --pe-kit-control:linear-gradient(155deg,rgba(255,255,255,.64),rgba(255,255,255,.56) 42%,rgba(255,255,255,.58));
+  --pe-kit-edge:rgba(255,255,255,.96);
+  --pe-kit-edge-dark:rgba(13,23,34,.34);
+  --pe-reading:var(--pe-kit-reading);
+  background:transparent; color:var(--pe-kit-ink); border-radius:40px;
+}
+.pe-kit-scene[data-pe-kit-backdrop="native"][data-pe-kit-theme="dark"] {
+  --pe-kit-ink:#f7f9fc; --pe-kit-muted:#edf1f6;
+  --pe-accent:#edf5ff;
+  --pe-kit-reading:rgba(15,20,25,.64);
+  --pe-kit-label:var(--pe-kit-reading);
+  --pe-kit-control:linear-gradient(155deg,rgba(15,20,25,.68),rgba(15,20,25,.64) 42%,rgba(15,20,25,.66));
+  --pe-kit-edge:rgba(255,255,255,.68);
+  --pe-kit-edge-dark:rgba(0,0,0,.48);
+}
+html body .pe-kit-scene[data-pe-kit-backdrop="native"] > .pe-kit-surface > .pe-kit-surface-lens {
+  background:var(--pe-kit-tint);
+  /* Leave the optical rim entirely to AppKit's real backdrop sampling.
+     Painted highlights here hide the background's curved geometry. */
+  box-shadow:none;
+}
+html body .pe-kit-scene[data-pe-kit-backdrop="native"] .pe-kit-button-lens {
+  background:var(--pe-kit-control);
+  box-shadow:inset 0 1px 0 var(--pe-kit-edge),inset 0 -1px 0 var(--pe-kit-edge-dark),0 2px 5px rgba(0,0,0,.07);
+  transition:filter .16s ease,box-shadow .16s ease;
+}
+html body .pe-kit-scene[data-pe-kit-backdrop="native"] .pe-kit-button {
+  transition:transform .16s cubic-bezier(.2,.8,.2,1); text-shadow:none;
+}
+html body .pe-kit-scene[data-pe-kit-backdrop="native"] .pe-kit-button:hover:not(:disabled) > .pe-kit-button-lens {filter:brightness(1.06)}
+html body .pe-kit-scene[data-pe-kit-backdrop="native"] .pe-kit-button:active:not(:disabled) {transform:scale(.975)}
+html body .pe-kit-scene[data-pe-kit-backdrop="native"] .pe-kit-button:disabled {opacity:.65}
+html body .pe-kit-scene[data-pe-kit-backdrop="native"][data-pe-kit-opaque="true"] {
+  --pe-kit-reading:var(--pe-kit-solid); --pe-kit-label:var(--pe-kit-solid);
+  background:var(--pe-kit-solid);
+}
+html body .pe-kit-scene[data-pe-kit-backdrop="native"][data-pe-kit-opaque="true"] .pe-kit-lens {
+  background:var(--pe-kit-solid); box-shadow:none; filter:none;
+}
+html body .pe-kit-scene[data-pe-kit-backdrop="native"][data-pe-kit-motion="reduced"] :is(.pe-kit-button,.pe-kit-button-lens) {
+  transition:none!important; transform:none!important; filter:none;
+}

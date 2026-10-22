@@ -119,7 +119,11 @@ static napi_value SetGlass(napi_env env, napi_callback_info info) {
         if (!children.count) return Result(env, false, true, false, "renderer-view-unavailable");
         NSGlassEffectView *glass = [[NSClassFromString(@"NSGlassEffectView") alloc] initWithFrame:root.bounds];
         if (!glass) return Result(env, false, true, false, "glass-creation-failed");
-        glass.style = NSGlassEffectViewStyleRegular; glass.cornerRadius = 22;
+        // Clear glass refracts the real content behind the window without a
+        // fixed color tint; the renderer supplies separate readable text layers.
+        // A wider native curved region exposes background bending at the
+        // corners. This changes geometry, not a private refraction parameter.
+        glass.style = NSGlassEffectViewStyleClear; glass.tintColor = nil; glass.cornerRadius = 40;
         glass.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
         NSView *container = [[NSView alloc] initWithFrame:root.bounds];
         container.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
@@ -172,6 +176,17 @@ static napi_value Status(napi_env env, napi_callback_info info) {
       PEGlassState *state = objc_getAssociatedObject(window, &kPEGlassState);
       const bool applied = Applied(window, state);
       napi_value result = Result(env, !state || applied, true, applied, state && !applied ? "content-view-changed" : nullptr, !state || state.responderPreserved);
+      if (@available(macOS 26.0, *)) {
+        if (applied) {
+          napi_value style;
+          const char *name = ((NSGlassEffectView *)state.glass).style == NSGlassEffectViewStyleClear ? "clear" : "regular";
+          napi_create_string_utf8(env, name, NAPI_AUTO_LENGTH, &style);
+          napi_set_named_property(env, result, "style", style);
+          napi_value radius;
+          napi_create_double(env, ((NSGlassEffectView *)state.glass).cornerRadius, &radius);
+          napi_set_named_property(env, result, "cornerRadius", radius);
+        }
+      }
       // Geometry and class names support isolated probes; no view text is read.
       napi_value number, names;
       napi_create_double(env, NSHeight(window.frame), &number); napi_set_named_property(env, result, "windowHeight", number);

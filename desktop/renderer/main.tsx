@@ -4,6 +4,8 @@ import Home from "../../app/page";
 import DesktopWorkspace from "../../components/studio/desktop-workspace";
 import ResultBubble from "../../components/studio/result-bubble";
 import "../../app/globals.css";
+import "../../components/studio/glass-workbench.css";
+import "../../components/studio/glass-popup.css";
 
 const query = new URLSearchParams(window.location.search);
 const workspace = query.get("workspace") === "1";

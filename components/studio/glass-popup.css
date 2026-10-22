@@ -1,0 +1,107 @@
+/* The supplied renderer owns optics; these rules only arrange readable content. */
+.pe-kit-scene:is(.pe-kit-panel-scene,.pe-kit-result-scene) {
+  width:100%; height:100dvh; border-radius:40px; overflow:hidden;
+  color:var(--pe-text,var(--pe-kit-ink));
+}
+.pe-kit-scene.pe-kit-panel-scene {
+  animation:pe-bubble-open .23s cubic-bezier(.18,.82,.24,1) both;
+  transform-origin:center;
+}
+.pe-kit-scene.pe-kit-panel-scene.is-closing {
+  animation:pe-bubble-close .10s cubic-bezier(.45,0,.8,.3) both;
+  pointer-events:none;
+}
+html body .pe-kit-scene:is(.pe-kit-panel-scene,.pe-kit-result-scene) :is(.pe-panel,.pe-result-bubble) {
+  width:100%; height:100%; min-height:0; margin:0;
+  border:0; background:transparent; box-shadow:none;
+  animation:none; color:var(--pe-text,var(--pe-kit-ink));
+}
+html body .pe-kit-panel-scene .pe-panel.is-closing {animation:none}
+html body .pe-kit-panel-scene .pe-directions {gap:4px; padding:0; border:0; background:transparent; box-shadow:none}
+html body .pe-kit-panel-scene .pe-direction {
+  background:transparent; border:0; box-shadow:none;
+  color:var(--pe-muted,var(--pe-kit-muted))!important;
+}
+.pe-kit-panel-scene .pe-direction:not(.is-selected) .pe-kit-lens {display:none}
+html body .pe-kit-panel-scene .pe-direction.is-selected {
+  color:var(--pe-text,var(--pe-kit-ink))!important; font-weight:600;
+}
+html body .pe-kit-panel-scene .pe-panel .pe-input-surface {
+  background:rgba(255,255,255,.30); border:0; box-shadow:none; border-radius:12px;
+}
+html body .pe-kit-panel-scene .pe-input-surface:focus-within {
+  outline:1px solid var(--pe-border); outline-offset:-1px;
+}
+html body .pe-kit-panel-scene .pe-panel :is(.pe-panel-settings,.pe-glass-button),
+html body .pe-kit-result-scene :is(.result-bubble-close,.result-bubble-copy,.result-bubble-retry,.result-reveal-model) {
+  background:transparent; border:0; box-shadow:none;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+  color:var(--pe-text,var(--pe-kit-ink))!important;
+}
+html body .pe-kit-panel-scene .compact-results-tab {
+  background:transparent; border:0; box-shadow:none;
+  color:var(--pe-text,var(--pe-kit-ink));
+}
+.pe-kit-panel-scene .compact-results-tab:not(.is-active) .pe-kit-lens {display:none}
+html body .pe-kit-panel-scene .compact-results-tab.is-active {
+  outline:1px solid var(--pe-border); outline-offset:-1px;
+}
+html body .pe-kit-panel-scene .pe-panel .pe-primary {
+  color:var(--pe-text,var(--pe-kit-ink))!important; font-weight:600;
+}
+html body .pe-kit-result-scene .result-bubble-prompt {
+  border:0; border-radius:12px; padding:8px 10px;
+  background:rgba(255,255,255,.22); color:var(--pe-text,var(--pe-kit-ink));
+}
+html body .pe-kit-scene[data-pe-kit-theme="dark"] :is(.pe-input-surface,.result-bubble-prompt) {
+  background:rgba(8,14,20,.20);
+}
+html body .pe-kit-scene[data-pe-kit-opaque="true"] :is(.pe-input-surface,.result-bubble-prompt) {
+  background:var(--pe-kit-solid); outline:1px solid var(--pe-border);
+}
+.pe-kit-scene[data-pe-kit-motion="reduced"]:is(.pe-kit-panel-scene,.pe-kit-result-scene) {
+  animation:none!important; transform:none!important; clip-path:none!important;
+}
+@media (prefers-reduced-motion:reduce) {
+  .pe-kit-scene.pe-kit-panel-scene {animation:none!important; transform:none!important; clip-path:none!important}
+}
+
+/* Clear native rim and gutters remain exposed around the reading areas. */
+html body .pe-kit-panel-scene[data-pe-kit-backdrop="native"] .pe-panel .pe-input-surface,
+html body .pe-kit-result-scene[data-pe-kit-backdrop="native"] .result-bubble-prompt {
+  background:var(--pe-kit-reading); color:var(--pe-kit-ink);
+  box-shadow:none; border:0;
+}
+/* Keep readable content away from the native curved edge. No transform or
+   displacement filter is applied to the text/content plane. */
+html body .pe-kit-scene[data-pe-kit-backdrop="native"] :is(.pe-panel,.pe-result-bubble) {
+  padding:22px 20px 20px;
+}
+html body .pe-kit-panel-scene[data-pe-kit-backdrop="native"] #prompt-input {
+  color:var(--pe-kit-ink); background:transparent; opacity:1;
+}
+html body .pe-kit-panel-scene[data-pe-kit-backdrop="native"] #prompt-input::placeholder {color:var(--pe-kit-muted);opacity:1}
+html body .pe-kit-panel-scene[data-pe-kit-backdrop="native"] :is(.pe-directions,.compact-results-tabs) {
+  background:transparent; border-radius:13px;
+}
+/* Each control gets one reading layer; no second group-wide white plate. */
+html body .pe-kit-panel-scene[data-pe-kit-backdrop="native"] :is(.pe-direction,.compact-results-tab) .pe-kit-lens {
+  display:block;
+}
+html body .pe-kit-panel-scene[data-pe-kit-backdrop="native"] .pe-direction.is-selected {
+  outline:1px solid var(--pe-accent);outline-offset:-1px;
+}
+html body .pe-kit-panel-scene[data-pe-kit-backdrop="native"] .compact-results-tab.is-active {
+  outline:1px solid var(--pe-border);outline-offset:-1px;
+}
+html body .pe-kit-panel-scene[data-pe-kit-backdrop="native"] :is(.pe-run-status,.compact-results-privacy,.pe-inline-warning),
+html body .pe-kit-result-scene[data-pe-kit-backdrop="native"] :is(.result-bubble-identity,.result-bubble-meta,.result-bubble-review-note,.result-bubble-feedback) {
+  border-radius:8px; background:var(--pe-kit-label); padding:2px 6px;
+  color:var(--pe-kit-muted);
+}
+html body .pe-kit-result-scene[data-pe-kit-backdrop="native"] .result-bubble-identity {color:var(--pe-kit-ink)}
+html body .pe-kit-result-scene[data-pe-kit-backdrop="native"] :is(.result-bubble-meta,.result-bubble-feedback):empty {background:none;padding:0}
+html body .pe-kit-result-scene[data-pe-kit-backdrop="native"] .result-bubble-empty {background:var(--pe-kit-reading);border-radius:12px;color:var(--pe-kit-ink);padding:16px}
+html body .pe-kit-result-scene[data-pe-kit-backdrop="native"]:not([data-pe-kit-opaque="true"]) .result-bubble-empty .pe-kit-button-lens {background:transparent}
+html body .pe-kit-scene[data-pe-kit-backdrop="native"] :is(.compact-results-brand,.compact-results-tab-badge,.result-bubble-identity strong,.result-bubble-recommendation) {color:var(--pe-kit-ink)}
+html body .pe-kit-panel-scene[data-pe-kit-backdrop="native"] .compact-results-reveal > span {background:var(--pe-kit-label);border-radius:6px;padding:1px 5px}

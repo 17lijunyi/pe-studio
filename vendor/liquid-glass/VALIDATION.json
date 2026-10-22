@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-16",
+  "package": "@vibe/liquid-glass",
+  "version": "0.1.0",
+  "bundleSha256": "e38d12e5f17bd8f0421ccc921ac98df36836f09448ae33aab0b22abf429b125b",
+  "environment": "macOS 27.0.1, Apple M5; Chromium WebGL 2.0, DPR 2",
+  "nodeTests": {
+    "passed": 22,
+    "failed": 0,
+    "command": "npm test"
+  },
+  "pixelConformance": {
+    "comparison": "Final packaged bundle vs existing measured renderer; same explicit gradient and coordinates",
+    "cases": [
+      {
+        "name": "mixed-default",
+        "channels": 7680000,
+        "maxByteDifference": 0,
+        "rmse": 0
+      },
+      {
+        "name": "regularInactive",
+        "channels": 7680000,
+        "maxByteDifference": 0,
+        "rmse": 0
+      },
+      {
+        "name": "clearInactive",
+        "channels": 7680000,
+        "maxByteDifference": 0,
+        "rmse": 0
+      },
+      {
+        "name": "buttonInactive",
+        "channels": 7680000,
+        "maxByteDifference": 0,
+        "rmse": 0
+      },
+      {
+        "name": "regularActive",
+        "channels": 7680000,
+        "maxByteDifference": 0,
+        "rmse": 0
+      },
+      {
+        "name": "clearActive",
+        "channels": 7680000,
+        "maxByteDifference": 0,
+        "rmse": 0
+      },
+      {
+        "name": "buttonActive",
+        "channels": 7680000,
+        "maxByteDifference": 0,
+        "rmse": 0
+      },
+      {
+        "name": "regularActiveDark",
+        "channels": 7680000,
+        "maxByteDifference": 0,
+        "rmse": 0
+      },
+      {
+        "name": "clearActiveDark",
+        "channels": 7680000,
+        "maxByteDifference": 0,
+        "rmse": 0
+      },
+      {
+        "name": "buttonActiveDark",
+        "channels": 7680000,
+        "maxByteDifference": 0,
+        "rmse": 0
+      }
+    ],
+    "channelsCompared": 76800000,
+    "allExact": true
+  },
+  "browserLifecycle": {
+    "checks": [
+      {
+        "name": "css-opacity",
+        "pass": true
+      },
+      {
+        "name": "visibility-hidden",
+        "pass": true
+      },
+      {
+        "name": "style-mutation-invalidates",
+        "pass": true
+      },
+      {
+        "name": "fractional-resize",
+        "pass": true,
+        "pixels": [
+          1599,
+          1199
+        ],
+        "source": [
+          1599,
+          1199
+        ]
+      },
+      {
+        "name": "forced-css",
+        "pass": true
+      },
+      {
+        "name": "css-to-webgl",
+        "pass": true
+      },
+      {
+        "name": "bad-url-fallback",
+        "pass": true
+      },
+      {
+        "name": "recover-after-bad-url",
+        "pass": true
+      },
+      {
+        "name": "tainted-canvas-fallback",
+        "pass": true
+      },
+      {
+        "name": "recover-after-upload-failure",
+        "pass": true
+      },
+      {
+        "name": "disconnect-cleanup",
+        "pass": true,
+        "panels": 0
+      },
+      {
+        "name": "reconnect",
+        "pass": true
+      }
+    ],
+    "allPassed": true
+  },
+  "actualWebGLContextRestore": {
+    "mechanism": "WEBGL_lose_context extension; lost to CSS fallback, restore to WebGL",
+    "result": {
+      "mode": "webgl",
+      "source": "paint",
+      "error": null,
+      "pixels": [
+        1600,
+        1200
+      ],
+      "surfaces": 2,
+      "postRestoreComparison": 0
+    }
+  },
+  "minimalExample": {
+    "mode": "webgl",
+    "surfaces": 1,
+    "source": "image",
+    "error": null
+  },
+  "interpretation": "Zero pixel difference verifies packaging preserves the existing measured renderer for the tested explicit sources and geometry. It does not establish complete 1:1 equivalence to the native macOS compositor.",
+  "evidenceInResearchWorkspace": [
+    "research/library-pixel-conformance.json",
+    "research/library-browser-lifecycle.json",
+    "research/library-context-restore.json",
+    "research/library-preview.png"
+  ],
+  "reuseKitExample": {
+    "example": "index.html",
+    "mode": "webgl",
+    "source": "default",
+    "surfaces": 1,
+    "error": null,
+    "sourceError": null,
+    "backgroundKernel": "variable13",
+    "sceneRegistered": true,
+    "glassRegistered": true
+  }
+}

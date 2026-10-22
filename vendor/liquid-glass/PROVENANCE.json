@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "package": "@vibe/liquid-glass",
+  "version": "0.1.0",
+  "status": "Measured partial reconstruction; not a complete 1:1 native compositor",
+  "captureSystem": "macOS 27.0.1 (26A434), Apple M5",
+  "defaults": {
+    "material": "clearActive",
+    "backgroundKernel": "variable13",
+    "tint": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "extraSdf": "Only active Clear by default; Regular remains explicit experimental"
+  },
+  "validationReferences": [
+    "research/phase3/composition-webgl-oracle.json",
+    "research/phase3/background-webgl-oracle.json",
+    "research/phase3/sdf-highlight-webgl-oracle.json",
+    "research/phase3/current-comparison-summary.json"
+  ],
+  "verified": {
+    "compositionFloatChannels": 137280,
+    "compositionMaxAbsError": 0.0003535747528076172,
+    "backgroundCasesPassed": 7,
+    "sdfFloatChannels": 20480,
+    "sdfMaxAbsError": 2.384185791015625e-07
+  },
+  "limits": [
+    "Only the explicit image/canvas source becomes a backdrop; arbitrary DOM is not captured",
+    "Actual native mip/intermediate routing, surface/context scale and continuous-corner SDF remain partial",
+    "Axis-aligned rounded rectangles; independent surfaces do not merge or refract other surfaces",
+    "Default SDR, unit geometry adapter and explicit float staging; live native HDR/half draw selection is not captured",
+    "CSS fallback has blur and tint without optical refraction; opacity/accessibility modes intentionally change appearance"
+  ],
+  "distribution": "Contains reconstructed JavaScript/GLSL and parameter observations. No Apple executable, metallib, private system framework or user screenshots are included.",
+  "bundle": {
+    "file": "liquid-glass.js",
+    "bytes": 205374,
+    "sha256": "e38d12e5f17bd8f0421ccc921ac98df36836f09448ae33aab0b22abf429b125b"
+  },
+  "modules": [
+    {
+      "file": "src/core/recovered-optics.js",
+      "sha256": "c74ac5bf24bbcd982f9b2e7587ccab9fcccb6d7cc691456dc3d8f637763438f2"
+    },
+    {
+      "file": "src/core/recovered-composite.js",
+      "sha256": "186890c87cdb761fac3c8944a73244b8c341c08b76d82fe2eff088083a76af66"
+    },
+    {
+      "file": "src/core/recovered-background.js",
+      "sha256": "8e71f518a6dfcada89e252423ec98aa1a39337028006ab9eafb9b732aa396b69"
+    },
+    {
+      "file": "src/core/recovered-sdf-highlight.js",
+      "sha256": "b5a7852359d4a779cd5f286ba10921c48d73de78f36c62548a7057a09a3a3405"
+    },
+    {
+      "file": "src/core/recovered-vibrancy.js",
+      "sha256": "b6806a2b0bafd2ffac571372020963b8633d8fea2ab1a53c04205112565316e6"
+    },
+    {
+      "file": "src/core/glass-renderer.js",
+      "sha256": "1d0bba39d0ea2d9f9ad9cf448fcc11e99b2df99a729b0fe95792332b2f2a4c2a"
+    },
+    {
+      "file": "src/core/native-materials.js",
+      "sha256": "8c5b2a7113c466468b87b5da555122365d55f50cdea22ed9c9bf155bf8a61b4b"
+    },
+    {
+      "file": "src/core/native-edge-materials.js",
+      "sha256": "d5d7b395746c8546caa57df8566e464ba64d43877a2ae7354968cb22284927a0"
+    },
+    {
+      "file": "src/materials.js",
+      "sha256": "7f68257cd0b103f5622376f7936ad98c558a1162fcd8d48b97363c0f07eb9a42"
+    },
+    {
+      "file": "src/core/recovered-spring.js",
+      "sha256": "e0d796033b09b3c135310acf24682ef153fd21e874abdf77e45d30d7d327c7db"
+    },
+    {
+      "file": "src/interaction.js",
+      "sha256": "9ff0393285f7b33778b39f520f010fe64a72746622fc4ee46b2d22bb4285a517"
+    },
+    {
+      "file": "src/background.js",
+      "sha256": "df0cd4586b52b873f8485df656bf7c7e9b5781467b84b0547746746f62ce344b"
+    },
+    {
+      "file": "src/elements.js",
+      "sha256": "2bf24aa3f4578d58233c100ab24428d2605e7140287a6cc44cafdc30832cb211"
+    },
+    {
+      "file": "src/index.js",
+      "sha256": "65c27f2e2895169ecd4c63cfc27c265a9fd017306e3d9c7d47a39ee1fe5ae80d"
+    }
+  ],
+  "packageValidation": {
+    "file": "VALIDATION.json",
+    "pixelCases": 10,
+    "channelsCompared": 76800000,
+    "allExact": true,
+    "nodeTestsPassed": 22,
+    "browserLifecycleChecksPassed": 12,
+    "actualContextLossAndRestore": "passed"
+  },
+  "distributionLayout": "Portable reuse kit. Module/source and research paths describe the original development workspace; they are not runtime dependencies.",
+  "localAdaptation": {
+    "description": "Replaced nine developer-machine absolute paths in material source metadata with portable research-relative paths; optical parameters and runtime logic are unchanged.",
+    "upstreamBundleSha256": "e38d12e5f17bd8f0421ccc921ac98df36836f09448ae33aab0b22abf429b125b",
+    "bundleBytes": 204870,
+    "bundleSha256": "7004ba90efb18ef26ddb9e062ca3aeccb63e652e549665460f67dec490caf795"
+  }
+}

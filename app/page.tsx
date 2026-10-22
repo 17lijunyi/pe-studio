@@ -9,6 +9,7 @@ import { DEMO_SESSION } from "@/lib/demo";
 import { AIHUBMIX_BASE_URL, normalizeAiHubMixBase } from "@/lib/aihubmix";
 import { SettingsDialog, type ServerConfig } from "@/components/studio/settings-dialog";
 import { CompactResults, Results } from "@/components/studio/results";
+import { GlassScene, GlassSurface, GlassButton } from "@/components/studio/liquid-glass";
 
 import type { PublicStudioState, WorkspaceCommand } from "@/desktop/workspace-contract";
 import { useDesktopAppearance } from "@/components/studio/use-desktop-appearance";
@@ -144,9 +145,10 @@ export default function Home() {
       }).catch(() => {});
       removeShow = desktop.onShow(() => {
         setClosing(false);
-        if (panelRef.current) {
-          panelRef.current.style.animation = "none";
-          requestAnimationFrame(() => { if (panelRef.current) panelRef.current.style.animation = ""; });
+        const visual = panelRef.current?.closest<HTMLElement>("liquid-glass-scene") || panelRef.current;
+        if (visual) {
+          visual.style.animation = "none";
+          requestAnimationFrame(() => { if (visual.isConnected) visual.style.animation = ""; });
         }
         textareaRef.current?.focus({ preventScroll: true });
       });
@@ -411,14 +413,14 @@ export default function Home() {
   const preset = DIRECTION_PRESETS[brief.direction];
   const visibleHistory = history.filter(s => historyOpen !== "favorites" || s.favorite);
 
-  if (isDesktop) return <div ref={panelRef} className={`pe-panel ${showCompactResults ? "has-results" : ""} ${closing ? "is-closing" : ""}`} data-reduce-motion={appearance.reduceMotion}>
-    <div className="pe-directions" role="group" aria-label="提示词方向">{directions.map(({ id, icon: Icon }) => <button key={id} className={`pe-direction ${brief.direction === id ? "is-selected" : ""}`} aria-pressed={brief.direction === id} onClick={() => updateBrief("direction", id)}><Icon size={15} /><span>{({ general: "普通", image: "生图", video: "视频", product: "产品" })[id]}</span></button>)}</div>
+  if (isDesktop) return <GlassScene className={`pe-kit-panel-scene ${closing ? "is-closing" : ""}`}><GlassSurface radius={40} ref={panelRef} className={`pe-panel ${showCompactResults ? "has-results" : ""} ${closing ? "is-closing" : ""}`} data-reduce-motion={appearance.reduceMotion}>
+    <div className="pe-directions" role="group" aria-label="提示词方向">{directions.map(({ id, icon: Icon }) => <GlassButton key={id} className={`pe-direction ${brief.direction === id ? "is-selected" : ""}`} aria-pressed={brief.direction === id} onClick={() => updateBrief("direction", id)}><Icon size={15} /><span>{({ general: "普通", image: "生图", video: "视频", product: "产品" })[id]}</span></GlassButton>)}</div>
     <div className="pe-input-surface"><label className="sr-only" htmlFor="prompt-input">输入你的想法</label><textarea ref={textareaRef} id="prompt-input" placeholder={preset.placeholder} value={brief.input} maxLength={12000} onChange={e => updateBrief("input", e.target.value)} onKeyDown={e => { if (!e.nativeEvent.isComposing && (e.metaKey || e.ctrlKey) && e.key === "Enter" && !running) { e.preventDefault(); void startGeneration(); } }} />{brief.input.length > 10000 && <span className="pe-count">{brief.input.length.toLocaleString()} / 12,000</span>}</div>
     {showCompactResults && session && <CompactResults modelsRevealed={modelsRevealed} onRevealModels={() => setModelsRevealed(true)} session={session} connections={runConnections.length ? runConnections : connections} generatingIds={pending} busy={running} judging={judging} activeCandidateId={activeResult?.sessionId === session.id ? activeResult.id : undefined} openedCandidateIds={resultVisibility.sessionId === session.id ? resultVisibility.visibleIds : []} onOpenCandidate={openCandidate} onRetryJudge={() => void retryJudge()} />}
-    <footer className="pe-footer"><div className="pe-panel-footer-start"><button type="button" className="pe-panel-settings" aria-label="打开设置" title="设置 · ⌘ ," onClick={openModelSettings}><Settings2 size={14} /><span>设置</span></button><div className="pe-run-status" role="status">{running ? <><span className="pe-working" />{judging ? "Jev 正在评审" : `${connections.length - pending.length}/${connections.length} 已完成`}</> : credentialsStatus === "loading" ? "正在读取模型连接…" : configuredCount === 0 ? <button onClick={openModelSettings}>连接模型</button> : <span className="pe-key-hint">⌘ ↵</span>}</div></div>{running ? <button className="pe-glass-button pe-stop" onClick={() => stopRun()}><Square size={12} />停止</button> : <button className="pe-glass-button pe-primary generate-button" disabled={configSyncing || credentialsStatus === "loading" || !brief.input.trim()} onClick={() => void startGeneration()}><WandSparkles size={16} />优化提示词</button>}</footer>
+    <footer className="pe-footer"><div className="pe-panel-footer-start"><GlassButton type="button" className="pe-panel-settings" aria-label="打开设置" title="设置 · ⌘ ," onClick={openModelSettings}><Settings2 size={14} /><span>设置</span></GlassButton><div className="pe-run-status" role="status">{running ? <><span className="pe-working" />{judging ? "Jev 正在评审" : `${connections.length - pending.length}/${connections.length} 已完成`}</> : credentialsStatus === "loading" ? "正在读取模型连接…" : configuredCount === 0 ? <GlassButton onClick={openModelSettings}>连接模型</GlassButton> : <span className="pe-key-hint">⌘ ↵</span>}</div></div>{running ? <GlassButton className="pe-glass-button pe-stop" onClick={() => stopRun()}><Square size={12} />停止</GlassButton> : <GlassButton className="pe-glass-button pe-primary generate-button" disabled={configSyncing || credentialsStatus === "loading" || !brief.input.trim()} onClick={() => void startGeneration()}><WandSparkles size={16} />优化提示词</GlassButton>}</footer>
     {storageError && <p className="pe-inline-warning" role="status">{storageError}</p>}
     {notice && <div className="pe-notice" role="status" onClick={() => setNotice("")}>{notice}</div>}
-  </div>;
+  </GlassSurface></GlassScene>;
   return <div className={`studio-shell ${isDesktop ? "desktop-mode" : ""}`}>
     <aside className="sidebar" aria-label="主导航">
       <a className="brand" href="#" onClick={e => { e.preventDefault(); newSession(); }} aria-label="PE Studio 首页"><span className="brand-mark"><Command size={22} strokeWidth={1.7} /></span><span>PE<span className="brand-light"> Studio</span><small>PROMPT, PERFECTED.</small></span></a>

@@ -9,7 +9,7 @@
 
 PE Studio 是一个开源 macOS 桌面工具。按 **Control + Q** 呼出小窗，输入想法，由三个模型各写一份提示词；Jev 对提示词本身评分，你可以比较、揭晓模型身份，再复制喜欢的一份。
 
-当前版本：**0.4.4** · [MIT License](LICENSE) · [反馈问题](https://github.com/17lijunyi/pe-studio/issues)
+当前版本：**0.4.8** · [MIT License](LICENSE) · [反馈问题](https://github.com/17lijunyi/pe-studio/issues)
 
 ## 能做什么
 
@@ -19,7 +19,11 @@ PE Studio 是一个开源 macOS 桌面工具。按 **Control + Q** 呼出小窗�
 - **评审与评分**：Jev 匿名评审，评分按真实候选关联；评审失败时保留已生成结果。评分不是目标模型实际运行效果的保证。
 - **自由配置**：三个连接位分别选择服务商和模型，目标模型名称也可自由填写。
 - **轻量小窗**：点击 A/B/C 展开结果，再点收起；拖动输入窗收起结果；外部点击、Esc 或切换应用收起小窗。
-- **macOS 毛玻璃**：小窗与工作台支持深浅色、减少透明度和减少动态效果；没有永久置顶或固定模式。
+- **Liquid Glass 界面**：小窗、结果泡泡与工作台使用同一套玻璃组件，支持深浅色、减少透明度和减少动态效果；没有永久置顶或固定模式。
+
+macOS 26 及以上通过公开的 `NSGlassEffectView` Clear 材质呈现真实窗口背景与圆角边缘折射。桌面渲染层保持透明，输入、正文和设置字段使用局部阅读衬底；不截屏、不要求屏幕录制权限。旧版 macOS 使用系统 vibrancy 回退。网页端继续使用随项目附带的 [Liquid Glass 0.1.0](vendor/liquid-glass/README.md) Clear 材质与 `variable13`，折射基于应用绘制的中性色 Canvas；WebGL 不可用时显示 CSS 兼容材质。减少透明度或增强对比度时统一改用实色，减少动态效果时停用玻璃按压动效。
+
+桌面外框不叠加整体白底或人工高光环，使用原生 Clear 玻璃及 40pt 曲面圆角，内容向内留白以露出真实背景折射。文字保持原尺寸，不使用位移或形变滤镜。阅读区域只保留一层衬底，避免设置面板、输入框反复叠加造成白色遮盖；桌面回归同时检查 CSS 背景透过率和文字对比度。
 
 ## 模型连接
 
@@ -125,6 +129,17 @@ npm test
 npm run typecheck
 npm run desktop:build
 ```
+
+macOS 桌面交互回归使用隔离数据目录和内存模拟请求，不使用个人 Key：
+
+```sh
+PE_STUDIO_SMOKE_DIR="$PWD/.sites-runtime/desktop-smoke" \
+PE_STUDIO_SMOKE_PROVIDER=aihubmix \
+PE_STUDIO_SMOKE_SET_SHORTCUT=Control+Alt+Shift+F11 \
+npm run desktop:start
+```
+
+测试结果与截图位于指定目录，包含三个窗口的真实渲染诊断和无障碍降级检查。
 
 ```text
 app/                  页面与 API 路由
